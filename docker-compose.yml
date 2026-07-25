@@ -1,5 +1,6 @@
 services:
   network-monitor:
+    container_name: network-outage-monitor
     build: .
     ports:
       - "8000:8000"
