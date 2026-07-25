@@ -2,7 +2,7 @@
 
 A small Dockerized web app that checks one endpoint every 5 seconds and records when outages start, when service recovers, and how long each outage lasted.
 
-The backend uses an HTTP request instead of raw ICMP ping so it can run in a normal Docker container. Each check is stored in SQLite and summarized as an outage log.
+The backend uses an HTTP request instead of raw ICMP ping so it can run in a normal Docker container. SQLite stores only outage starts and the first successful recovery check, while routine successful checks remain in memory.
 
 ## Run
 

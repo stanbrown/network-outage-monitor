@@ -26,6 +26,7 @@ REQUEST_TIMEOUT_SECONDS = float(os.environ.get("REQUEST_TIMEOUT_SECONDS", "4"))
 RETENTION_DAYS = int(os.environ.get("RETENTION_DAYS", "7"))
 URL_OPENER = build_opener(ProxyHandler({}))
 LAST_PROBE_OK: bool | None = None
+LATEST_CHECK: dict | None = None
 
 
 def utc_now_iso() -> str:
@@ -56,17 +57,35 @@ def get_db() -> sqlite3.Connection:
 
 
 def record_check(ok: bool, latency_ms: float | None, status_code: int | None, error: str | None) -> None:
-    global LAST_PROBE_OK
+    global LAST_PROBE_OK, LATEST_CHECK
 
+    checked_at = int(time.time())
     with get_db() as conn:
-        conn.execute(
-            """
-            INSERT INTO checks (checked_at, ok, latency_ms, status_code, error)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (int(time.time()), 1 if ok else 0, latency_ms, status_code, error),
-        )
-        conn.commit()
+        previous_row = conn.execute(
+            "SELECT ok FROM checks ORDER BY checked_at DESC, id DESC LIMIT 1"
+        ).fetchone()
+        previous_stored_ok = bool(previous_row[0]) if previous_row is not None else None
+        state_changed = previous_stored_ok is not ok
+
+        # Successful checks are only stored when they close an outage. Failed
+        # checks are only stored when they begin one.
+        if state_changed and (not ok or previous_stored_ok is False):
+            conn.execute(
+                """
+                INSERT INTO checks (checked_at, ok, latency_ms, status_code, error)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (checked_at, 1 if ok else 0, latency_ms, status_code, error),
+            )
+            conn.commit()
+
+    LATEST_CHECK = {
+        "time": datetime.fromtimestamp(checked_at, timezone.utc).isoformat().replace("+00:00", "Z"),
+        "ok": ok,
+        "latencyMs": latency_ms,
+        "statusCode": status_code,
+        "error": error,
+    }
 
     if ok != LAST_PROBE_OK:
         timestamp = utc_now_iso()
@@ -81,7 +100,22 @@ def record_check(ok: bool, latency_ms: float | None, status_code: int | None, er
 def prune_old_checks() -> int:
     cutoff_epoch = int(time.time()) - (RETENTION_DAYS * 24 * 60 * 60)
     with get_db() as conn:
-        cursor = conn.execute("DELETE FROM checks WHERE checked_at < ?", (cutoff_epoch,))
+        cursor = conn.execute(
+            """
+            DELETE FROM checks
+            WHERE checked_at < ?
+              AND NOT (
+                  ok = 0
+                  AND id = (
+                      SELECT id
+                      FROM checks
+                      ORDER BY checked_at DESC, id DESC
+                      LIMIT 1
+                  )
+              )
+            """,
+            (cutoff_epoch,),
+        )
         conn.commit()
         return cursor.rowcount
 
@@ -136,7 +170,7 @@ def fetch_outages() -> dict:
         }
         for row in rows
     ]
-    latest = points[-1] if points else None
+    latest = LATEST_CHECK or (points[-1] if points else None)
     outages = []
     outage_start = None
 
