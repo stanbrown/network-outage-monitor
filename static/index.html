@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Network Outage Monitor</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><h1>Network Outage Monitor</h1><p id="target">Loading target...</p></div>
+      <div class="status" id="currentStatus">Waiting</div>
+    </header>
+    <section class="metrics" aria-label="Outage summary">
+      <div><span>Outages</span><strong id="outageCount">--</strong></div>
+      <div><span>Total downtime</span><strong id="totalDowntime">--</strong></div>
+      <div><span>Last check</span><strong id="lastCheck">--</strong></div>
+    </section>
+    <section class="logPanel" aria-labelledby="logTitle">
+      <div class="logHeader">
+        <div><h2 id="logTitle">Outage log</h2><span id="rangeLabel">Last 7 days</span></div>
+        <span id="updated">Not updated yet</span>
+      </div>
+      <div id="outageList" class="outageList" aria-live="polite"></div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

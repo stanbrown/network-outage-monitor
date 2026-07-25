@@ -1,0 +1,15 @@
+services:
+  network-monitor:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      TARGET_URL: "https://www.google.com/generate_204"
+      CHECK_INTERVAL_SECONDS: "5"
+      DATA_DIR: "/data"
+    volumes:
+      - network-monitor-data:/data
+    restart: unless-stopped
+
+volumes:
+  network-monitor-data:

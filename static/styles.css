@@ -1,0 +1,205 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f7fa;
+  --ink: #17202a;
+  --muted: #627084;
+  --line: #d7dde5;
+  --panel: #ffffff;
+  --up: #168a5b;
+  --down: #c43d38;
+  --down-bg: #fff7f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.shell {
+  width: min(960px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 28px 0;
+}
+
+.topbar,
+.logHeader,
+.outageRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.topbar {
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 30px;
+}
+
+h2 {
+  font-size: 18px;
+}
+
+#target {
+  margin-top: 6px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.status {
+  min-width: 112px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  text-align: center;
+  font-weight: 700;
+}
+
+.status.up {
+  border-color: var(--up);
+  color: var(--up);
+}
+
+.status.down {
+  border-color: var(--down);
+  color: var(--down);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.metrics div,
+.logPanel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.metrics div {
+  padding: 14px;
+}
+
+.metrics span,
+.outageRow span,
+#rangeLabel,
+#updated {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.metrics span {
+  margin-bottom: 8px;
+}
+
+.metrics strong {
+  font-size: 22px;
+}
+
+.logPanel {
+  padding: 16px;
+}
+
+.logHeader {
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+#rangeLabel {
+  margin-top: 4px;
+}
+
+.outageList {
+  max-height: min(64vh, 680px);
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+}
+
+.outageRow {
+  align-items: center;
+  padding: 16px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.outageRow.ongoing {
+  background: var(--down-bg);
+  border-left: 4px solid var(--down);
+  padding-left: 8px;
+}
+
+.outageRow > div:first-child strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 16px;
+}
+
+.duration {
+  min-width: 120px;
+  text-align: right;
+}
+
+.duration strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 18px;
+}
+
+.emptyState {
+  padding: 34px 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 680px) {
+  .topbar {
+    display: block;
+  }
+
+  .status {
+    width: 100%;
+    margin-top: 14px;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .shell {
+    width: min(100vw - 20px, 960px);
+    padding: 16px 0;
+  }
+
+  .logHeader,
+  .outageRow {
+    align-items: flex-start;
+  }
+
+  .outageRow {
+    display: block;
+  }
+
+  .duration {
+    margin-top: 12px;
+    text-align: left;
+  }
+}
