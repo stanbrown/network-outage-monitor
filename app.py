@@ -25,6 +25,7 @@ CHECK_INTERVAL_SECONDS = float(os.environ.get("CHECK_INTERVAL_SECONDS", "5"))
 REQUEST_TIMEOUT_SECONDS = float(os.environ.get("REQUEST_TIMEOUT_SECONDS", "4"))
 RETENTION_DAYS = int(os.environ.get("RETENTION_DAYS", "7"))
 URL_OPENER = build_opener(ProxyHandler({}))
+LAST_PROBE_OK: bool | None = None
 
 
 def utc_now_iso() -> str:
@@ -55,6 +56,8 @@ def get_db() -> sqlite3.Connection:
 
 
 def record_check(ok: bool, latency_ms: float | None, status_code: int | None, error: str | None) -> None:
+    global LAST_PROBE_OK
+
     with get_db() as conn:
         conn.execute(
             """
@@ -64,6 +67,16 @@ def record_check(ok: bool, latency_ms: float | None, status_code: int | None, er
             (int(time.time()), 1 if ok else 0, latency_ms, status_code, error),
         )
         conn.commit()
+
+    if ok != LAST_PROBE_OK:
+        timestamp = utc_now_iso()
+        if ok:
+            message = "Target is online" if LAST_PROBE_OK is None else "Connection restored"
+        else:
+            detail = error or (f"HTTP {status_code}" if status_code is not None else "No response")
+            message = f"Outage detected: {detail}"
+        print(f"{timestamp} {message}", flush=True)
+        LAST_PROBE_OK = ok
 
 def prune_old_checks() -> int:
     cutoff_epoch = int(time.time()) - (RETENTION_DAYS * 24 * 60 * 60)
@@ -205,9 +218,12 @@ def main() -> None:
     pruned_count = prune_old_checks()
     threading.Thread(target=monitor_loop, daemon=True).start()
     server = Server((HOST, PORT), Handler)
-    print(f"Network monitor listening on http://{HOST}:{PORT}")
-    print(f"Checking {TARGET_URL} every {CHECK_INTERVAL_SECONDS:g} seconds")
-    print(f"Keeping {RETENTION_DAYS} days of data (removed {pruned_count} old records at startup)")
+    print(f"Network monitor listening on http://{HOST}:{PORT}", flush=True)
+    print(f"Checking {TARGET_URL} every {CHECK_INTERVAL_SECONDS:g} seconds", flush=True)
+    print(
+        f"Keeping {RETENTION_DAYS} days of data (removed {pruned_count} old records at startup)",
+        flush=True,
+    )
     server.serve_forever()
 
 
